@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prediction Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        h2 {
+            color: #3366cc;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .note {
+            color: red;
+            font-weight: bold;
+        }
+        img {
+            max-width: 300px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h2>Image-Based Diagnosis</h2>
+        <ul>
+            {% for label, prob in image_diag.items() %}
+                <li>{{ label }}: {{ prob }}</li>
+            {% endfor %}
+        </ul>
+        {% if image_filename %}
+            <img src="{{ url_for('static', filename=image_filename) }}" alt="Uploaded Image">
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>Image-Based Treatment Prediction</h2>
+        <ul>
+            {% for label, prob in image_treat.items() %}
+                <li>{{ label }}: {{ prob }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Protein-Based Diagnosis (Olink)</h2>
+        <ul>
+            {% for label, prob in protein_diag.items() %}
+                <li>{{ label }}: {{ prob }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Protein-Based Treatment Prediction (Olink)</h2>
+        <ul>
+            {% for label, prob in protein_treat.items() %}
+                <li>{{ label }}: {{ prob }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="note">{{ recommendation }}</div>
+</body>
+</html>
+
+
