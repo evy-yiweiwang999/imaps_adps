@@ -77,14 +77,18 @@ def predict_protein(csv_path, task, iga=None, bsa=None):
     proba = model.predict_proba(input_df)[0]
     return {label: round(float(p), 3) for label, p in zip(label_map, proba)}
 
-# ========== Image Model ==========
+# ========== Lazy-load Image Models ==========
+cnn_diagnosis = None
+cnn_ad = None
+cnn_ps = None
+
 def load_efficientnet_model(path):
     state_dict = torch.load(path, map_location='cpu')
     try:
         out_features = state_dict['classifier.3.weight'].shape[0]
     except KeyError:
         out_features = 2
-    base = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
+    base = efficientnet_b0(weights=None)  # Avoid downloading
     base.classifier = nn.Identity()
     model = nn.Sequential(
         base,
@@ -99,11 +103,24 @@ def load_efficientnet_model(path):
     model.eval()
     return model
 
-cnn_diagnosis = load_efficientnet_model('models/eff_dia_full_state_dict.pt')
-cnn_ad = load_efficientnet_model('models/effnetb0_best_adtr_state_dict.pt')
-cnn_ps = load_efficientnet_model('models/effnetb0_best_pstr_state_dict.pt')
+def get_model(task):
+    global cnn_diagnosis, cnn_ad, cnn_ps
+    if task == 'diagnosis':
+        if cnn_diagnosis is None:
+            cnn_diagnosis = load_efficientnet_model('models/eff_dia_full_state_dict.pt')
+        return cnn_diagnosis
+    elif task == 'adtreat':
+        if cnn_ad is None:
+            cnn_ad = load_efficientnet_model('models/effnetb0_best_adtr_state_dict.pt')
+        return cnn_ad
+    elif task == 'pstreat':
+        if cnn_ps is None:
+            cnn_ps = load_efficientnet_model('models/effnetb0_best_pstr_state_dict.pt')
+        return cnn_ps
+    return None
 
 def predict_image(img_path, task):
+    print(f"[INFO] Predicting {task} for {img_path}")
     img = Image.open(img_path).convert('RGB')
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -111,15 +128,9 @@ def predict_image(img_path, task):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     x = transform(img).unsqueeze(0)
+    model = get_model(task)
     with torch.no_grad():
-        if task == 'diagnosis':
-            out = cnn_diagnosis(x)
-        elif task == 'adtreat':
-            out = cnn_ad(x)
-        elif task == 'pstreat':
-            out = cnn_ps(x)
-        else:
-            return {}
+        out = model(x)
         proba = torch.softmax(out, dim=1).numpy()[0]
     if task == 'diagnosis':
         return {"Atopic Dermatitis (AD)": round(proba[0], 3), "Psoriasis (PS)": round(proba[1], 3)}
@@ -184,4 +195,5 @@ def demo():
 
 if __name__ == '__main__':
     app.run(debug=False)
+
 
