@@ -1,0 +1,9 @@
+flask
+pandas
+numpy
+torch
+Pillow
+joblib
+scikit-learn
+efficientnet_pytorch
+torchvision

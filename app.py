@@ -255,5 +255,9 @@ def run_demo():
         recommendation="* We recommend using the Olink (protein-based) result; the image-based result is for reference only."
     )
 
+import os
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
